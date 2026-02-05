@@ -31,10 +31,11 @@ private:
     ref_type   m_ref;
     Node *m_pNext = nullptr;
 
+
 public:
     NodeLinkedList(){}
-    NodeLinkedList( value_type _value, ref_type _ref = -1)
-        : m_data(_value), m_ref(_ref){   }
+    NodeLinkedList( value_type _value, ref_type _ref = -1, Node* _next=nullptr)
+        : m_data(_value), m_ref(_ref), m_pNext(_next) {   }
     value_type  GetValue   () const { return m_data; }
     value_type &GetValueRef() { return m_data; }
 
@@ -53,6 +54,17 @@ public:
     { return m_data == another.GetValue();   }
     bool operator<(const Node &another) const
     { return m_data < another.GetValue();   }
+};
+
+
+//iterator
+template <typename Traits>
+class LinkedListForwardIterator{
+    using Node = NodeLinkedList<Traits>;
+    using value_type =typename Traits::value_type;
+
+    
+
 };
 
 template <typename Traits>
@@ -75,13 +87,26 @@ public:
 private:
     void InternalInsert(Node *&rParent, const value_type &val, ref_type ref);
 
+    // friend ostream &operator<<(ostream &os, CLinkedList<Traits> &container){
+    //     os << "CLinkedList: size = " << container.m_nElements << endl;
+    //     os << "[";
+    //     for (auto i = 0; i < container.getSize(); ++i){
+    //         os << "(" << arr.m_data[i].GetValue() << ":" << arr.m_data[i].GetRef() << "),";
+    //     }
+    //     os << "]" << endl;
+    //     return os;
+    // }
+
     friend ostream &operator<<(ostream &os, CLinkedList<Traits> &container){
-        os << "CLinkedList: size = " << container.getSize() << endl;
-        os << "[";
-        for (auto i = 0; i < container.getSize(); ++i){
-            // os << "(" << arr.m_data[i].GetValue() << ":" << arr.m_data[i].GetRef() << "),";
+        os << "ClinkedList: size = " << container.getSize() << endl;
+        Node *currentNode = container.m_pRoot;
+        while ( currentNode != nullptr){
+            os << "[" << currentNode->GetValue() << "," << currentNode->GetRef() << "]";
+            
+            if ( currentNode->GetNext() != nullptr)
+                os << "->";
+            currentNode = currentNode->GetNext();
         }
-        os << "]" << endl;
         return os;
     }
 };
@@ -89,15 +114,17 @@ private:
 template <typename Traits>
 void CLinkedList<Traits>::push_back(value_type &val, ref_type ref){
     Node *pNewNode = new Node(val, ref);
-    if( !m_pRoot )
+    if   ( !m_pRoot )
         m_pRoot = pNewNode;
+    else
+        m_pLast->m_pNext=pNewNode;
     m_pLast = pNewNode;
     ++m_nElements;
 }
 
 template <typename Traits>
 void CLinkedList<Traits>::InternalInsert(Node *&rParent, const value_type &val, ref_type ref){
-    if( !rParent || rParent->m_data > val ){
+    if( !rParent || rParent->GetValue() > val ){
         Node *pNew = new Node(val, ref, rParent);
         rParent = pNew;
         ++m_nElements;
