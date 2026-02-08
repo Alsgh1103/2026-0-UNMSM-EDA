@@ -1,6 +1,6 @@
 #ifndef __GENERAL_ITERATOR_H__
 #define __GENERAL_ITERATOR_H__
-#include "util.h"
+#include "../util.h"
 
 template <typename Container>
 struct GeneralIterator
@@ -17,7 +17,7 @@ struct GeneralIterator
            m_data = m_pContainer->m_data;
            m_pos = pos;
          }
-    GeneralIterator(GeneralIterator<Container> &another)
+    GeneralIterator(const GeneralIterator<Container> &another)
          :  m_pContainer(another.m_pContainer),
             m_data (another.m_data),
             m_pos  (another.m_pos)
