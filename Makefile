@@ -1,6 +1,6 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -g -fdiagnostics-color=always
-LDFLAGS =
+CXXFLAGS = -std=c++17 -Wall -g -fdiagnostics-color=always 
+LDFLAGS = 
 
 TARGET = main
 SRCS = main.cpp util.cpp pointers.cpp DemoArray.cpp DemoLists.cpp
