@@ -3,6 +3,7 @@
 #include <iostream>
 #include <utility>
 #include <cassert>
+#include <mutex>
 #include "../general/types.h"
 #include "../util.h"
 #include "../foreach.h"
@@ -109,10 +110,12 @@ class CLinkedList {
     using  value_type      = typename Traits::value_type;;
     using  Node            = NodeLinkedList<Traits>;
     using  forwardIterator = LinkedListForwardIterator<Traits>;
-
+    
     Node *m_pRoot      = nullptr;
     Node *m_pLast      = nullptr;
     size_t m_nElements = 0;
+    mutable std::recursive_mutex m_mtx;
+    
 public:
     CLinkedList(){}
     CLinkedList(const CLinkedList<Traits>& other);
@@ -129,7 +132,8 @@ public:
     const value_type& operator[](size_t index) const;
     void push_back(value_type const &val, ref_type ref);
     void Insert(const value_type &val, ref_type ref);
-    size_t getSize(){  
+    size_t getSize() const {  
+        std::lock_guard<std::recursive_mutex> lock(m_mtx);
         return m_nElements;  
     }
     forwardIterator begin(){ return forwardIterator(m_pRoot); }
@@ -149,6 +153,7 @@ private:
     void InternalInsert(Node *&rParent, const value_type &val, ref_type ref);
     //Operator <<
     friend ostream &operator<<(ostream &os, CLinkedList<Traits> &container){
+        std::lock_guard<std::recursive_mutex> lock(container.m_mtx);
         os << "ClinkedList: size = " << container.m_nElements << endl;
         Node *currentNode = container.m_pRoot;
         while ( currentNode != nullptr){
@@ -196,6 +201,7 @@ CLinkedList<Traits>::~CLinkedList(){
 //Constructor copia
 template <typename Traits>
 CLinkedList<Traits>::CLinkedList(const CLinkedList<Traits>& other){
+    std::lock_guard<std::recursive_mutex> lock(other.m_mtx);
     Node *currentNode = other.m_pRoot;
     while (currentNode != nullptr){
         Node *pNewNode = new Node(currentNode->GetValue(), currentNode->GetRef());
@@ -214,6 +220,9 @@ template <typename Traits>
 CLinkedList<Traits>& CLinkedList<Traits>::operator=(const CLinkedList<Traits>& other){
     if( this == &other )
         return *this;
+    std::lock(m_mtx, other.m_mtx);
+    std::lock_guard<std::recursive_mutex> lock1(m_mtx, std::adopt_lock);
+    std::lock_guard<std::recursive_mutex> lock2(other.m_mtx, std::adopt_lock);
     Node *currentNode = m_pRoot;
     while ( currentNode != nullptr){
         Node* nextNode = currentNode->GetNext();
@@ -237,7 +246,8 @@ CLinkedList<Traits>& CLinkedList<Traits>::operator=(const CLinkedList<Traits>& o
 //operador de asignación (robado)
 template <typename Traits>
 CLinkedList<Traits>& CLinkedList<Traits>::operator=(CLinkedList<Traits>&& other) noexcept{
-
+    std::lock_guard<std::recursive_mutex> lock(m_mtx);
+    std::lock_guard<std::recursive_mutex> lockOther(other.m_mtx);
     if( this != &other ){
         Node *currentNode = m_pRoot;
         while ( currentNode != nullptr){
@@ -256,6 +266,7 @@ CLinkedList<Traits>& CLinkedList<Traits>::operator=(CLinkedList<Traits>&& other)
 //operador [] asignar valor
 template <typename Traits>
 typename CLinkedList<Traits>::value_type& CLinkedList<Traits>::operator[](size_t index){
+    std::lock_guard<std::recursive_mutex> lock(m_mtx);
     assert (index < m_nElements);
     Node *currentNode = m_pRoot;
     for (size_t i=0; i < index; ++i)
@@ -266,6 +277,7 @@ typename CLinkedList<Traits>::value_type& CLinkedList<Traits>::operator[](size_t
 //operador [] mostrar valor
 template <typename Traits>
 const typename CLinkedList<Traits>::value_type& CLinkedList<Traits>::operator[](size_t index) const {
+    std::lock_guard<std::recursive_mutex> lock(m_mtx);
     assert (index < m_nElements);
     Node *currentNode = m_pRoot;
     for (size_t i=0; i < index; ++i)
@@ -276,6 +288,7 @@ const typename CLinkedList<Traits>::value_type& CLinkedList<Traits>::operator[](
 
 template <typename Traits>
 void CLinkedList<Traits>::push_back(const value_type &val, ref_type ref){
+    std::lock_guard<std::recursive_mutex> lock(m_mtx);
     Node *pNewNode = new Node(val, ref);
     if   ( !m_pRoot )
         m_pRoot = pNewNode;
@@ -298,6 +311,7 @@ void CLinkedList<Traits>::InternalInsert(Node *&rParent, const value_type &val, 
 
 template <typename Traits>
 void CLinkedList<Traits>::Insert(const value_type &val, ref_type ref){
+    std::lock_guard<std::recursive_mutex> lock(m_mtx);
     InternalInsert(m_pRoot, val, ref);
 }
 
