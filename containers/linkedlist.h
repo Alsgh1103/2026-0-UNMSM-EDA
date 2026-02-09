@@ -3,6 +3,7 @@
 #include <iostream>
 #include <utility>
 #include <cassert>
+#include <mutex>
 #include "../general/types.h"
 #include "../util.h"
 #include "../foreach.h"
@@ -34,10 +35,10 @@ class NodeLinkedList{
     using  value_type  = typename Traits::value_type;
     using  Node        = NodeLinkedList<Traits>;
 private:
+    
     value_type m_data;
     ref_type   m_ref;
-    Node *m_pNext = nullptr;
-
+    Node *m_pNext     = nullptr;
 
 public:
     NodeLinkedList(){}
@@ -71,8 +72,14 @@ class LinkedListForwardIterator{
     using value_type = typename Traits::value_type;
 private:
     Node* m_pCurrent;
+    Node* m_pStart;
+    bool  m_bFirstPass;
 public:
-    LinkedListForwardIterator(Node* node) : m_pCurrent(node) {}
+    LinkedListForwardIterator(Node* node) 
+        : m_pCurrent(node),
+          m_pStart (node),
+          m_bFirstPass(true)
+        {}
     LinkedListForwardIterator& operator++();
     value_type& operator*();
     bool operator!=(const LinkedListForwardIterator& other) const;
@@ -84,6 +91,11 @@ template <typename Traits>
 LinkedListForwardIterator<Traits>& LinkedListForwardIterator<Traits>::operator++(){
     assert( m_pCurrent != nullptr);
     m_pCurrent = m_pCurrent->GetNext();
+
+    if(m_pCurrent == m_pStart && !m_bFirstPass)
+        m_pCurrent = nullptr;
+
+    m_bFirstPass = false;
     return *this;
 }
 
@@ -112,10 +124,11 @@ class CLinkedList {
     using  value_type      = typename Traits::value_type;;
     using  Node            = NodeLinkedList<Traits>;
     using  forwardIterator = LinkedListForwardIterator<Traits>;
-
+protected:
     Node *m_pRoot      = nullptr;
     Node *m_pLast      = nullptr;
     size_t m_nElements = 0;
+    mutable std::recursive_mutex m_mtx;
 public:
     CLinkedList(){}
     // TODO: Constructor copia
@@ -130,7 +143,7 @@ public:
           m_pLast     (std::exchange (other.m_pLast,nullptr)),
           m_nElements (std::exchange (other.m_nElements,0))
         {}
-    ~CLinkedList();
+    virtual ~CLinkedList();
 
     CLinkedList& operator=(const CLinkedList<Traits>& other);
     CLinkedList& operator=(CLinkedList<Traits>&& other) noexcept;
@@ -160,6 +173,7 @@ private:
     // TODO: Persistencia (write)
     //Operator <<
     friend ostream &operator<<(ostream &os, CLinkedList<Traits> &container){
+        std::lock_guard<std::recursive_mutex> lock(container.m_mtx);
         os << "ClinkedList: size = " << container.m_nElements << endl;
         Node *currentNode = container.m_pRoot;
         while ( currentNode != nullptr){
@@ -208,6 +222,7 @@ CLinkedList<Traits>::~CLinkedList(){
 //Constructor copia
 template <typename Traits>
 CLinkedList<Traits>::CLinkedList(const CLinkedList<Traits>& other){
+    std::lock_guard<std::recursive_mutex> lock(other.m_mtx);
     Node *currentNode = other.m_pRoot;
     while (currentNode != nullptr){
         Node *pNewNode = new Node(currentNode->GetValue(), currentNode->GetRef());
@@ -226,6 +241,9 @@ template <typename Traits>
 CLinkedList<Traits>& CLinkedList<Traits>::operator=(const CLinkedList<Traits>& other){
     if( this == &other )
         return *this;
+    std::lock(m_mtx, other.m_mtx);
+    std::lock_guard<std::recursive_mutex> lock1(m_mtx, std::adopt_lock);
+    std::lock_guard<std::recursive_mutex> lock2(other.m_mtx, std::adopt_lock);
     Node *currentNode = m_pRoot;
     while ( currentNode != nullptr){
         Node* nextNode = currentNode->GetNext();
@@ -249,7 +267,8 @@ CLinkedList<Traits>& CLinkedList<Traits>::operator=(const CLinkedList<Traits>& o
 //operador de asignación (robado)
 template <typename Traits>
 CLinkedList<Traits>& CLinkedList<Traits>::operator=(CLinkedList<Traits>&& other) noexcept{
-
+    std::lock_guard<std::recursive_mutex> lock(m_mtx);
+    std::lock_guard<std::recursive_mutex> lockOther(other.m_mtx);
     if( this != &other ){
         Node *currentNode = m_pRoot;
         while ( currentNode != nullptr){
@@ -268,6 +287,7 @@ CLinkedList<Traits>& CLinkedList<Traits>::operator=(CLinkedList<Traits>&& other)
 //operador [] asignar valor
 template <typename Traits>
 typename CLinkedList<Traits>::value_type& CLinkedList<Traits>::operator[](size_t index){
+    std::lock_guard<std::recursive_mutex> lock(m_mtx);
     assert (index < m_nElements);
     Node *currentNode = m_pRoot;
     for (size_t i=0; i < index; ++i)
@@ -278,6 +298,7 @@ typename CLinkedList<Traits>::value_type& CLinkedList<Traits>::operator[](size_t
 //operador [] mostrar valor
 template <typename Traits>
 const typename CLinkedList<Traits>::value_type& CLinkedList<Traits>::operator[](size_t index) const {
+    std::lock_guard<std::recursive_mutex> lock(m_mtx);
     assert (index < m_nElements);
     Node *currentNode = m_pRoot;
     for (size_t i=0; i < index; ++i)
@@ -288,6 +309,7 @@ const typename CLinkedList<Traits>::value_type& CLinkedList<Traits>::operator[](
 
 template <typename Traits>
 void CLinkedList<Traits>::push_back(const value_type &val, ref_type ref){
+    std::lock_guard<std::recursive_mutex> lock(m_mtx);
     Node *pNewNode = new Node(val, ref);
     if   ( !m_pRoot )
         m_pRoot = pNewNode;
@@ -300,7 +322,6 @@ void CLinkedList<Traits>::push_back(const value_type &val, ref_type ref){
 template <typename Traits>
 void CLinkedList<Traits>::InternalInsert(Node *&rParent, const value_type &val, ref_type ref){
     // TODO: Agregar algo para el caso de circular
-    if( !rParent || rParent->m_data > val ){
     if( !rParent || rParent->GetValue() > val ){
         Node *pNew = new Node(val, ref, rParent);
         rParent = pNew;
@@ -312,6 +333,7 @@ void CLinkedList<Traits>::InternalInsert(Node *&rParent, const value_type &val, 
 
 template <typename Traits>
 void CLinkedList<Traits>::Insert(const value_type &val, ref_type ref){
+    std::lock_guard<std::recursive_mutex> lock(m_mtx);
     InternalInsert(m_pRoot, val, ref);
 }
 

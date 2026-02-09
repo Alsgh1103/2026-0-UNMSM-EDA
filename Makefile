@@ -3,8 +3,8 @@ CXXFLAGS = -std=c++17 -Wall -g -fdiagnostics-color=always
 LDFLAGS = 
 
 TARGET = main
-SRCS = main.cpp util.cpp pointers.cpp DemoArray.cpp DemoLists.cpp
-OBJS = main.o util.o pointers.o DemoArray.o DemoLists.o sorting.o
+SRCS = main.cpp util.cpp pointers.cpp DemoArray.cpp DemoLists.cpp DemoCircularList.cpp
+OBJS = main.o util.o pointers.o DemoArray.o DemoLists.o sorting.o DemoCircularList.o
 
 all: $(TARGET)
 
