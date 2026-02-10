@@ -4,8 +4,8 @@
 #include "containers/array.h"
 #include "containers/lists.h"
 
-// g++ -std=c++17 -Wall -g -pthread main.cpp DemoDoubleList.cpp -o main
-void DemoDoubleList();
+// g++ -std=c++17 -Wall -g -pthread main.cpp DemoDoubleCircularList.cpp -o main
+void DemoDoubleCircularList();
 
 int main() {
     std::cout << "Hello EDA-UNMSM!" << std::endl;
@@ -14,6 +14,7 @@ int main() {
     // DemoArray();
     // DemoLists();
     // DemoThreads();
-    DemoDoubleList();
+    // DemoDoubleList();
+    DemoDoubleCircularList();
     return 0;
 }
