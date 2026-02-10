@@ -1,14 +1,15 @@
 #include <iostream>
 #include <fstream>
-#include "containers/lists.h"
+#include "containers/doublelinkedlist.h"
 #include "variadic-util.h"
 
 using namespace std;
 
-bool MayorQue30(T1 &elem);
+bool MayorQue30_DLL(T1 &elem);
 
-void DemoLists(){
-    CLinkedList < AscendingTrait<T1> > l1;
+void DemoDoubleList(){
+    cout << "=== Demo Lista Doblemente Enlazada ===" << endl;
+    CDoubleLinkedList < AscendingTrait<T1> > l1;
 
     l1.Insert(20, 5);
     l1.Insert(30, 3);
@@ -19,12 +20,12 @@ void DemoLists(){
     cout << l1 << endl;
 
     //PROBANDO CONSTRUCTOR COPIA
-    CLinkedList < AscendingTrait<T1> > l2 = l1;
+    CDoubleLinkedList < AscendingTrait<T1> > l2 = l1;
     cout << l2 << endl;
     cout << endl;
 
     //PROBANDO OPERADOR '='
-    CLinkedList < AscendingTrait<T1> > l3;
+    CDoubleLinkedList < AscendingTrait<T1> > l3;
     l3.Insert(50,6);
     l3.Insert(30,2);
     cout << endl;
@@ -39,14 +40,14 @@ void DemoLists(){
     //MOVE CONSTRUCTOR
     cout << endl; 
     cout << "MOVE CONSTRUCTOR - lista 4" << endl;
-    CLinkedList< AscendingTrait<T1> > l4 = move(l3);
+    CDoubleLinkedList< AscendingTrait<T1> > l4 = std::move(l3);
     cout << l4 << endl;
 
     //OPERADOR '=' CON move
     cout << endl;
     cout << "Operador '=' en move - lista 5" << endl;
-    CLinkedList< AscendingTrait<T1> > l5;
-    l5 = move(l2);
+    CDoubleLinkedList< AscendingTrait<T1> > l5;
+    l5 = std::move(l2);
     cout << l5 << endl; 
     cout << endl;
 
@@ -56,8 +57,12 @@ void DemoLists(){
     cout << l5 << endl ;
 
     //Probando iteradores
-    cout << endl << "Iteradores " << endl;
+    cout << endl << "Iteradores (Forward)" << endl;
     for(auto it = l5.begin(); it != l5.end() ; ++it)
+        cout << *it << "; ";
+    
+    cout << endl << "Iteradores (Backward)" << endl;
+    for(auto it = l5.rbegin(); it != l5.rend() ; ++it)
         cout << *it << "; ";
 
     //Probando Foreach con suma 
@@ -67,21 +72,27 @@ void DemoLists(){
     cout << "Lista despues: " << l5 << endl;
 
     //Probando Firsthat 
-    auto iter = l5.FirstThat(&MayorQue30);
+    auto iter = l5.FirstThat(&MayorQue30_DLL);
     if(iter != l5.end())
     {   cout << "El primer elemento mayor a 30 es: " << *iter << endl;   }
     
     //Probando Istream
     cout << endl << "Probando operator>> input stream " << endl;
-    cout << "Leyendo de archivo 'list.txt' " << endl;
-    ifstream list("list.txt");
-    CLinkedList<AscendingTrait<T1>> l6;
+    cout << "Leyendo de archivo 'DoubleList.txt' " << endl;
+    
+
+    ifstream list("DoubleList.txt");
+    CDoubleLinkedList<AscendingTrait<T1>> l6;
     list >> l6;
     list.close();
     cout << "Lista leida: " << l6 << endl;
+    cout << "Backward lista leida: ";
+    for(auto it = l6.rbegin(); it != l6.rend() ; ++it)
+        cout << *it << "; ";
+    cout << endl;
 
 }
 
-bool MayorQue30(T1 &elem){
+bool MayorQue30_DLL(T1 &elem){
     return elem > 30;
 }

@@ -1,14 +1,15 @@
 #include <iostream>
 #include <fstream>
-#include "containers/lists.h"
+#include "containers/circularlist.h" 
 #include "variadic-util.h"
 
 using namespace std;
 
-bool MayorQue30(T1 &elem);
+bool MayorQue30Circular(T1 &elem);
 
-void DemoLists(){
-    CLinkedList < AscendingTrait<T1> > l1;
+void DemoCircularList(){
+    cout << "Lista Circular" << endl;
+    CCircularList < AscendingTrait<T1> > l1;
 
     l1.Insert(20, 5);
     l1.Insert(30, 3);
@@ -19,12 +20,14 @@ void DemoLists(){
     cout << l1 << endl;
 
     //PROBANDO CONSTRUCTOR COPIA
-    CLinkedList < AscendingTrait<T1> > l2 = l1;
+    cout << endl << "Constructor copia" << endl;
+    CCircularList < AscendingTrait<T1> > l2 = l1;
     cout << l2 << endl;
     cout << endl;
 
     //PROBANDO OPERADOR '='
-    CLinkedList < AscendingTrait<T1> > l3;
+    cout << endl << "Operator '='" << endl;
+    CCircularList < AscendingTrait<T1> > l3;
     l3.Insert(50,6);
     l3.Insert(30,2);
     cout << endl;
@@ -39,13 +42,13 @@ void DemoLists(){
     //MOVE CONSTRUCTOR
     cout << endl; 
     cout << "MOVE CONSTRUCTOR - lista 4" << endl;
-    CLinkedList< AscendingTrait<T1> > l4 = move(l3);
+    CCircularList< AscendingTrait<T1> > l4 = move(l3);
     cout << l4 << endl;
 
     //OPERADOR '=' CON move
     cout << endl;
     cout << "Operador '=' en move - lista 5" << endl;
-    CLinkedList< AscendingTrait<T1> > l5;
+    CCircularList< AscendingTrait<T1> > l5;
     l5 = move(l2);
     cout << l5 << endl; 
     cout << endl;
@@ -67,21 +70,21 @@ void DemoLists(){
     cout << "Lista despues: " << l5 << endl;
 
     //Probando Firsthat 
-    auto iter = l5.FirstThat(&MayorQue30);
+    cout << endl << "Probando FirstThat" << endl;
+    auto iter = l5.FirstThat(&MayorQue30Circular);
     if(iter != l5.end())
     {   cout << "El primer elemento mayor a 30 es: " << *iter << endl;   }
     
-    //Probando Istream
-    cout << endl << "Probando operator>> input stream " << endl;
-    cout << "Leyendo de archivo 'list.txt' " << endl;
-    ifstream list("list.txt");
-    CLinkedList<AscendingTrait<T1>> l6;
+    //Probando Istream con ifstream
+    cout << endl << "Probando operator>> " << endl;
+    ifstream list("CircularList.txt");
+    CCircularList<AscendingTrait<T1>> l6;
     list >> l6;
     list.close();
     cout << "Lista leida: " << l6 << endl;
 
 }
 
-bool MayorQue30(T1 &elem){
+bool MayorQue30Circular(T1 &elem){
     return elem > 30;
 }

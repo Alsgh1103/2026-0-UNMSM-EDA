@@ -19,7 +19,7 @@ class ArrayForwardIterator : public GeneralIterator<Container>
   using Parent = GeneralIterator<Container>;
   public:
     ArrayForwardIterator(Container *pContainer, Size pos=0)       : Parent(pContainer, pos){}
-    ArrayForwardIterator(ArrayForwardIterator<Container> &another):  Parent(another){}
+    ArrayForwardIterator(const ArrayForwardIterator<Container> &another):  Parent(another){}
 
     ArrayForwardIterator<Container> &operator++(){
         if( Parent::m_pos < Parent::m_pContainer->getSize() )
@@ -34,7 +34,7 @@ class ArrayBackwardIterator : public GeneralIterator<Container>
   using Parent = GeneralIterator<Container>;
   public:
     ArrayBackwardIterator(Container *pContainer, Size pos=0)          : Parent(pContainer, pos){}
-    ArrayBackwardIterator(ArrayBackwardIterator<Container> &another)  :  Parent(another){}
+    ArrayBackwardIterator(const ArrayBackwardIterator<Container> &another)  :  Parent(another){}
 
     ArrayBackwardIterator<Container> &operator++(){
         if( Parent::m_pos > -1 )

@@ -5,5 +5,6 @@
 #include "linkedlist.h"
 
 void DemoLists();
+void DemoCircularList();
 
 #endif // __LISTS_H__
