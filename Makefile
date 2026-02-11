@@ -1,11 +1,9 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -g -pthread # Añadido -pthread
-LDFLAGS = -pthread # Añadido -pthread
+CXXFLAGS = -std=c++17 -Wall -g -fdiagnostics-color=always 
+LDFLAGS = 
 
 TARGET = main
-SRCS = main.cpp util.cpp pointers.cpp \
-       DemoArray.cpp Demo.cpp \
-	   sorting.cpp
+SRCS = main.cpp util.cpp DemoStack.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 all: $(TARGET)
@@ -15,6 +13,9 @@ $(TARGET): $(OBJS)
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+sorting.o: algorithms/sorting.cpp
+	$(CXX) $(CXXFLAGS) -I. -c $< -o $@
 
 clean:
 	rm -f $(OBJS) $(TARGET)
