@@ -5,12 +5,14 @@
 #include "containers/lists.h"
 
 // g++ -std=c++17 -Wall -g -pthread main.cpp -o main
+void DemoQueue();
 
 int main() {
-    std::cout << "Hello EDA-UNMSM!" << std::endl;
+    //std::cout << "Hello EDA-UNMSM!" << std::endl;
     // DemoUtil();
     // DemoPointers1();
     // DemoArray();
-    DemoLists();
+    //DemoLists();
+    DemoQueue();
     return 0;
 }
