@@ -12,20 +12,18 @@ void DemoStack(){
     S1.Push(1);
     S1.Push(8);
     S1.Push(3);
-    cout << S1 << endl;
+    cout << "Stack 1 " << endl << S1 << endl;
 
     ifstream inf("stack.txt");
     CStack<T1> S2;
     inf >> S2;
     inf.close();
-    cout << "Pila leída desde archivo:" << endl;
+    cout << endl << "Stack 2 - leida desde archivo:" << endl;
     cout << S2 << endl;
 
-    cout << endl << "Top y Pop" << endl;
-    cout << "Top actual: " << S1.Top() << endl;
+    cout << endl << " Stack 1 - Pop" << endl;
     S1.Pop();
-    cout << "Después de Pop: " << S1 << endl;
-    cout << "Nuevo Top: " << S1.Top() << endl;
+    cout << "Despues de Pop: " << S1 << endl;
 
     cout << endl << "PROBANDO CONSTRUCTOR COPIA" << endl;
     CStack<T1> S3 = S1;
@@ -35,7 +33,6 @@ void DemoStack(){
     cout << "PROBANDO OPERADOR '='" << endl;
     CStack<T1> S4;
     S4.Push(99);
-    cout << endl;
     cout << "Stack 4" << endl;
     cout << S4 << endl;
     cout << endl;

@@ -39,9 +39,7 @@ private:
 
 public:
     void Push(const value_type& value);
-    void Pop();
-    value_type& Top();
-    const value_type& Top() const;
+    value_type Pop();
     CStack(){}
     //Copy constructor
     CStack(const CStack<T>& other);
@@ -126,29 +124,16 @@ void CStack<T>::Push(const typename CStack::value_type& value){
 
 //Eliminación de último elemento - Pop
 template <typename T>
-void CStack<T>::Pop(){
+typename CStack<T>::value_type CStack<T>::Pop(){
     std::lock_guard<std::recursive_mutex> lock(m_mtx);
     assert(m_pTop);
     NodeStack* p_nextNode = m_pTop->GetNext();
+    value_type valor = m_pTop->GetValue();
     delete m_pTop;
     m_pTop = p_nextNode;
     --m_nElements;
+    return valor;
 }
-
-//Mostrar último elemento con posibilidad de modificar
-template <typename T>
-typename CStack<T>::value_type& CStack<T>::Top(){
-    std::lock_guard<std::recursive_mutex> lock(m_mtx);
-    assert(m_pTop);
-    return m_pTop->GetValueRef(); 
-} 
-//Solo leer último elemento de la pila
-template <typename T>
-const typename CStack<T>::value_type& CStack<T>::Top() const{
-    std::lock_guard<std::recursive_mutex> lock(m_mtx);
-    assert(m_pTop);
-    return m_pTop->GetValue(); 
-} 
 
 // Copy constructor
 template <typename T>
