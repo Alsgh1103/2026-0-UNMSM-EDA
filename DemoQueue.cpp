@@ -12,20 +12,22 @@ void DemoQueue(){
     Q1.Push(1);
     Q1.Push(8);
     Q1.Push(3);
+    cout << "Cola 1 " << endl;
     cout << Q1 << endl;
+
+    cout << endl << "Pop - Cola 1 " << endl;
+    cout << "Elemento extraido: " << Q1.Pop() << endl;
+    cout << "Despues de Pop: " << Q1 << endl;
+    cout << "Siguiente elemento extraido: " << Q1.Pop() << endl;
+    cout << "Cola 1 - estado final " << Q1 << endl;
 
     ifstream inf("queue.txt");
     CQueue<T1> Q2;
     inf >> Q2;
     inf.close();
+    cout << endl;
     cout << "Cola leida desde archivo:" << endl;
     cout << Q2 << endl;
-
-    cout << endl << "Front y Pop" << endl;
-    cout << "Front actual: " << Q1.Front() << endl;
-    Q1.Pop();
-    cout << "Despues de Pop: " << Q1 << endl;
-    cout << "Nuevo Front: " << Q1.Front() << endl;
 
     cout << endl << "PROBANDO CONSTRUCTOR COPIA" << endl;
     CQueue<T1> Q3 = Q1;
@@ -42,7 +44,6 @@ void DemoQueue(){
     Q4 = Q1;
     cout << "Cola 4 modificada" << endl;
     cout << Q4 << endl;
-    cout << endl;
 
     cout << endl;
     cout << "MOVE CONSTRUCTOR - cola 5" << endl;

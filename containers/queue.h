@@ -40,9 +40,7 @@ private:
 
 public:
     void Push(const value_type& value);
-    void Pop();
-    value_type& Front();
-    const value_type& Front() const;
+    value_type Pop();
     CQueue(){}
     //Copy constructor
     CQueue(const CQueue<T>& other);
@@ -134,31 +132,18 @@ void CQueue<T>::Push(const typename CQueue::value_type& value){
 
 //quitar del inicio de la cola
 template <typename T>
-void CQueue<T>::Pop(){
+typename CQueue<T>::value_type CQueue<T>::Pop(){
     std::lock_guard<std::recursive_mutex> lock(m_mtx);
     assert(m_pFront);
     NodeQueue* p_nextNode = m_pFront->GetNext();
+    value_type valor = std::move(m_pFront->GetValueRef());
     delete m_pFront;
     m_pFront = p_nextNode;
     if(!m_pFront)
         m_pRear = nullptr;
     --m_nElements;
+    return valor;
 }
-
-//ver el primero con posibilidad de modificar
-template <typename T>
-typename CQueue<T>::value_type& CQueue<T>::Front(){
-    std::lock_guard<std::recursive_mutex> lock(m_mtx);
-    assert(m_pFront);
-    return m_pFront->GetValueRef(); 
-} 
-//solo leer el primero de la cola
-template <typename T>
-const typename CQueue<T>::value_type& CQueue<T>::Front() const{
-    std::lock_guard<std::recursive_mutex> lock(m_mtx);
-    assert(m_pFront);
-    return m_pFront->GetValue(); 
-} 
 
 // Copy constructor
 template <typename T>
