@@ -128,7 +128,7 @@ typename CStack<T>::value_type CStack<T>::Pop(){
     std::lock_guard<std::recursive_mutex> lock(m_mtx);
     assert(m_pTop);
     NodeStack* p_nextNode = m_pTop->GetNext();
-    value_type valor = m_pTop->GetValue();
+    value_type valor = std::move(m_pTop->GetValueRef());
     delete m_pTop;
     m_pTop = p_nextNode;
     --m_nElements;
