@@ -13,6 +13,10 @@ void DemoStack(){
     S1.Push(8);
     S1.Push(3);
     cout << "Stack 1 " << endl << S1 << endl;
+    cout << endl << " Stack 1 - Pop" << endl;
+    T1 valor = S1.Pop();
+    cout << "Ultimo valor en la pila = " << valor << endl;
+    cout << "Despues de Pop: " << S1 << endl;
 
     ifstream inf("stack.txt");
     CStack<T1> S2;
@@ -21,9 +25,7 @@ void DemoStack(){
     cout << endl << "Stack 2 - leida desde archivo:" << endl;
     cout << S2 << endl;
 
-    cout << endl << " Stack 1 - Pop" << endl;
-    S1.Pop();
-    cout << "Despues de Pop: " << S1 << endl;
+
 
     cout << endl << "PROBANDO CONSTRUCTOR COPIA" << endl;
     CStack<T1> S3 = S1;
