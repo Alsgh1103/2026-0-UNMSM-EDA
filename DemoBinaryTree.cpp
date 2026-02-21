@@ -13,6 +13,7 @@ void PrintStr   (string&);
 void DemoBinaryTree(){
 
     //Creación de BinaryTree Ascending
+    cout << "----------DEMO BINARY TREE-------------" << endl;
     cout << "BinaryTree 1 - Ascending" << endl;
     CBinaryTree<TreeTraitAscending<T1>> Tree1;
     Tree1.Insert(50, 1);
