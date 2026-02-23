@@ -4,141 +4,154 @@
 #define BTREE_H
 
 #include <iostream>
+#include <mutex>
 #include "BTreePage.h"
 
-#define DEFAULT_BTREE_ORDER 3
-
-template <typename keyType, typename ObjIDType = long>
-class BTree 
-// this is the full version of the BTree
+template <typename Traits>
+class CBTree
 {
-       typedef CBTreePage <keyType, ObjIDType> BTNode;// useful shorthand
-       /*struct ObjectInfo
-       {
-               keyType first;
-               long    second;
-               ObjectInfo *&operator->() { return this; }
-       };*/
+       using BTPage     = CBTreePage<Traits>;
+       using ObjectInfo = CBTreeEntry<Traits>;
 
 public:
-       //typedef ObjectInfo iterator;
-       typedef typename BTNode::lpfnForEach2    lpfnForEach2;
-       typedef typename BTNode::lpfnForEach3    lpfnForEach3;
-       typedef typename BTNode::lpfnFirstThat2  lpfnFirstThat2;
-       typedef typename BTNode::lpfnFirstThat3  lpfnFirstThat3;
-       typedef typename BTNode::ObjectInfo      ObjectInfo;
+       using value_type = typename Traits::value_type;
+       using ObjIDType  = typename Traits::ObjIDType;
 
 public:
-       BTree(int order = DEFAULT_BTREE_ORDER, bool unique = true);
-       ~BTree();
-       //int           Open (char * name, int mode);
-       //int           Create (char * name, int mode);
-       //int           Close ();
-       bool            Insert (const keyType key, const int ObjID);
-       bool            Remove (const keyType key, const int ObjID);
-       ObjIDType       Search (const keyType key);
-       long            size()  { return m_NumKeys; }
-       long            height() { return m_Height;      }
-       long            GetOrder() { return m_Order;     }
+       CBTree(int order = Traits::order, bool unique = true);
+       virtual ~CBTree() = default;
 
-       void            Print (ostream &os);
-       void            ForEach( lpfnForEach2 lpfn, void *pExtra1 );
-       void            ForEach( lpfnForEach3 lpfn, void *pExtra1, void *pExtra2);
-       ObjectInfo*     FirstThat( lpfnFirstThat2 lpfn, void *pExtra1 );
-       ObjectInfo*     FirstThat( lpfnFirstThat3 lpfn, void *pExtra1, void *pExtra2);
-       //typedef               ObjectInfo iterator;
+       bool         Insert(const value_type& key, ObjIDType ObjID);
+       bool         Remove(const value_type& key, ObjIDType ObjID);
+       ObjectInfo*  Search(const value_type& key);
+
+       long size()     const { return m_NumKeys; }
+       long height()   const { return m_Height;  }
+       long GetOrder() const { return m_Order;   }
+
+       void Print(ostream& os);
+
+       template<typename Func, typename... Args>
+       void Inorden(Func fn, Args... args);
+
+       template<typename Func, typename... Args>
+       void Preorden(Func fn, Args... args);
+
+       template<typename Func, typename... Args>
+       void Postorden(Func fn, Args... args);
+
+       template<typename Func, typename... Args>
+       void Foreach(Func fn, Args... args);
+
+       template<typename Func, typename... Args>
+       ObjectInfo* FirstThat(Func fn, Args... args);
+
+       friend ostream& operator<<(ostream& os, CBTree<Traits>& bt) {
+              bt.Print(os);
+              return os;
+       }
 
 protected:
-       BTNode          m_Root;
-       long            m_NumKeys; // number of keys
-       bool            m_Unique;  // Accept the elements only once ?
-       int             m_Order;   // order of tree
-       int             m_Height;  // height of tree
+        BTPage  m_Root;
+        long    m_NumKeys;
+        bool    m_Unique;
+        int     m_Order;
+        int     m_Height;
+        mutable std::recursive_mutex m_mtx;
 };
 
-const int MaxHeight = 5;
-template <typename keyType, typename ObjIDType>
-BTree<keyType, ObjIDType>::BTree(int order, bool unique)
-                               : m_Root(2 * order  + 1, unique),
-                                 m_NumKeys(0),
-                                 m_Unique(unique),
-                                 m_Order(order)
+template <typename Traits>
+CBTree<Traits>::CBTree(int order, bool unique)
+        : m_Root(2 * order + 1, unique),
+          m_NumKeys(0),
+          m_Unique(unique),
+          m_Order(order),
+          m_Height(1)
 {
-       m_Root.SetMaxKeysForChilds(order);
-       m_Height = 1;
+        m_Root.SetMaxKeysForChilds(order);
 }
 
-template <typename keyType, typename ObjIDType>
-BTree<keyType, ObjIDType>::~BTree()
+template <typename Traits>
+bool CBTree<Traits>::Insert(const value_type& key, ObjIDType ObjID)
 {
+        std::lock_guard<std::recursive_mutex> lock(m_mtx);
+        bt_ErrorCode error = m_Root.Insert(key, ObjID);
+        if( error == bt_duplicate ) 
+              return false;
+        m_NumKeys++;
+        if( error == bt_overflow ) {
+                m_Root.SplitRoot();
+                m_Height++;
+        }
+        return true;
 }
 
-template <typename keyType, typename ObjIDType>
-bool BTree<keyType, ObjIDType>::Insert(const keyType key, const int ObjID)
+template <typename Traits>
+bool CBTree<Traits>::Remove(const value_type& key, ObjIDType ObjID)
 {
-       bt_ErrorCode error = m_Root.Insert(key, ObjID);
-       if( error == bt_duplicate )
-               return false;
-       m_NumKeys++;
-       if( error == bt_overflow )
-       {
-               m_Root.SplitRoot();
-               m_Height++;
-       }
-       return true;
-}
-
-template <typename keyType, typename ObjIDType>
-bool BTree<keyType, ObjIDType>::Remove (const keyType key, const int ObjID)
-{
-       bt_ErrorCode error = m_Root.Remove(key, ObjID);
+        std::lock_guard<std::recursive_mutex> lock(m_mtx);
+        bt_ErrorCode error = m_Root.Remove(key, ObjID);
        if( error == bt_duplicate || error == bt_nofound )
                return false;
-       m_NumKeys--;
+        m_NumKeys--;
 
        if( error == bt_rootmerged )
                m_Height--;
-       return true;
+        return true;
 }
 
-template <typename keyType, typename ObjIDType>
-ObjIDType BTree<keyType, ObjIDType>::Search (const keyType key)
+template <typename Traits>
+typename CBTree<Traits>::ObjectInfo*
+CBTree<Traits>::Search(const value_type& key)
 {
-       ObjIDType ObjID = -1;
-       m_Root.Search(key, ObjID);
-       return ObjID;
+        std::lock_guard<std::recursive_mutex> lock(m_mtx);
+        return m_Root.Search(key);
 }
 
-
-template <typename keyType, typename ObjIDType>
-void BTree<keyType, ObjIDType>::ForEach(lpfnForEach2 lpfn, void *pExtra1)
+template <typename Traits>
+void CBTree<Traits>::Print(ostream& os)
 {
-       m_Root.ForEach(lpfn, 0, pExtra1);
+        std::lock_guard<std::recursive_mutex> lock(m_mtx);
+        m_Root.Print(os);
 }
 
-template <typename keyType, typename ObjIDType>
-void BTree<keyType, ObjIDType>::ForEach(lpfnForEach3 lpfn, void *pExtra1, void *pExtra2)
+template <typename Traits>
+template <typename Func, typename... Args>
+void CBTree<Traits>::Inorden(Func fn, Args... args){
+       std::lock_guard<std::recursive_mutex> lock(m_mtx);
+       m_Root.Inorden(fn, 0, args...);
+}
+
+template <typename Traits>
+template <typename Func, typename... Args>
+void CBTree<Traits>::Preorden(Func fn, Args... args)
 {
-       m_Root.ForEach(lpfn, 0, pExtra1, pExtra2);
+        std::lock_guard<std::recursive_mutex> lock(m_mtx);
+        m_Root.Preorden(fn, 0, args...);
 }
 
-template <typename keyType, typename ObjIDType>
-typename BTree<keyType, ObjIDType>::ObjectInfo *
-BTree<keyType, ObjIDType>::FirstThat(lpfnFirstThat2 lpfn, void *pExtra1)
+template <typename Traits>
+template <typename Func, typename... Args>
+void CBTree<Traits>::Postorden(Func fn, Args... args){
+       std::lock_guard<std::recursive_mutex> lock(m_mtx);
+       m_Root.Postorden(fn, 0, args...);
+}
+
+template <typename Traits>
+template <typename Func, typename... Args>
+void CBTree<Traits>::Foreach(Func fn, Args... args)
 {
-       return m_Root.FirstThat(lpfn, 0, pExtra1);
+        std::lock_guard<std::recursive_mutex> lock(m_mtx);
+        m_Root.Inorden(fn, 0, args...);
 }
 
-template <typename keyType, typename ObjIDType>
-typename BTree<keyType, ObjIDType>::ObjectInfo *
-BTree<keyType, ObjIDType>::FirstThat(lpfnFirstThat3 lpfn, void *pExtra1, void *pExtra2)
+template <typename Traits>
+template <typename Func, typename... Args>
+typename CBTree<Traits>::ObjectInfo*
+CBTree<Traits>::FirstThat(Func fn, Args... args)
 {
-       return m_Root.FirstThat(lpfn, 0, pExtra1, pExtra2);
-}
-
-template <typename keyType, typename ObjIDType>
-void BTree<keyType, ObjIDType>::Print(ostream &os){
-       m_Root.Print(os);
+        std::lock_guard<std::recursive_mutex> lock(m_mtx);
+        return m_Root.FirstThat(fn, 0, args...);
 }
 
 void DemoBTree();
