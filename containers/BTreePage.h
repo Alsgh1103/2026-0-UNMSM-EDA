@@ -6,6 +6,7 @@
 #include <cassert>
 #include <functional>
 #include <mutex>
+#include <utility>
 
 // Forward declarations
 template <typename Traits> class CBTree;
@@ -199,23 +200,21 @@ CBTreePage<Traits>:: CBTreePage(int maxKeys, bool unique)
        SetMaxKeysForChilds(m_MaxKeys);
 }
 
+//MOVE CONSTRUCTOR
 template <typename Traits>
 CBTreePage<Traits>::CBTreePage(CBTreePage&& other) noexcept
-        : m_MinKeys          (other.m_MinKeys),
-          m_MaxKeys          (other.m_MaxKeys),
-          m_MaxKeysForChilds (other.m_MaxKeysForChilds),
-          m_Unique           (other.m_Unique),
-          m_isRoot           (other.m_isRoot),
+        : m_MinKeys          (std::exchange(other.m_MinKeys, 0)),
+          m_MaxKeys          (std::exchange(other.m_MaxKeys, 0)),
+          m_MaxKeysForChilds (std::exchange(other.m_MaxKeysForChilds,0)),
+          m_Unique           (std::exchange(other.m_Unique, false)),
+          m_isRoot           (std::exchange(other.m_isRoot, false)),
           m_Keys             (std::move(other.m_Keys)),
           m_SubPages         (std::move(other.m_SubPages)),
           m_KeyCount         (std::exchange(other.m_KeyCount, 0))
 {}
 
 template <typename Traits>
-CBTreePage<Traits>::~CBTreePage()
-{
-       Reset();
-}
+CBTreePage<Traits>::~CBTreePage() { Reset(); }
 
 template <typename Traits>
 bt_ErrorCode CBTreePage<Traits>::Insert(const value_type& key, ObjIDType ObjID)
@@ -385,7 +384,6 @@ void CBTreePage<Traits>::RedistributeL2R(int pos)
 template <typename Traits>
 void CBTreePage<Traits>::SplitChild(int pos)
 {
-       // FIRST: deciding the second page to split
        BTPage  *pChild1 = 0, *pChild2 = 0;
        if( pos > 0 )                                   // is left page full ?
                if( m_SubPages[pos-1]->IsFull() )
@@ -399,22 +397,11 @@ void CBTreePage<Traits>::SplitChild(int pos)
                        pChild1 = m_SubPages[pos];
                        pChild2 = m_SubPages[pos+1];
                }
-
-        // int nKeys = pChild1->GetNumberOfKeys() + pChild2->GetNumberOfKeys() + 1;
-
-       // SECOND: copy both pages to a temporal one
-       // Create two tmp vector
        vector<ObjectInfo> tmpKeys;
-       //tmpKeys.resize(nKeys);
        vector<BTPage *>   tmpSubPages;
-       //tmpKeys.resize(nKeys+1);
 
-       // copy from left child
        MovePage(pChild1, tmpKeys, tmpSubPages);
-       // copy a key from parent
        tmpKeys    .push_back(m_Keys[pos]);
-
-       // copy from right child
        MovePage(pChild2, tmpKeys, tmpSubPages);
 
        BTPage *pChild3 = 0;
@@ -780,22 +767,19 @@ void CBTreePage<Traits>::Create()
 template <typename Traits>
 void CBTreePage<Traits>::Reset()
 {
-       for( int i = 0 ; i < m_KeyCount ; i++ )
+       if (m_SubPages.empty()) return;
+       for( int i = 0 ; i <= m_KeyCount ; i++ ) {
                delete m_SubPages[i];
+               m_SubPages[i] = nullptr;
+       }
        clear();
 }
 
 template <typename Traits>
-void CBTreePage<Traits>::clear()
-{
-       //m_Keys.clear();
-       //m_SubPages.clear();
-       m_KeyCount = 0;
-}
+void CBTreePage<Traits>::clear() { m_KeyCount = 0; }
 
 template <typename Traits>
-CBTreePage<Traits>* CreateBTreeNode (int maxKeys, int unique)
-{
+CBTreePage<Traits>* CreateBTreeNode (int maxKeys, int unique){
        return new CBTreePage<Traits> (maxKeys, unique);
 }
 
