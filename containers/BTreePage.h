@@ -82,6 +82,7 @@ public:
         bt_ErrorCode  Remove(const value_type& key, ObjIDType ObjID);
         ObjectInfo*   Search(const value_type& key);
         void          Print(ostream& os);
+        void          Print(ostream& os, int level);
 
         template<typename Func, typename... Args>
         void Inorden(Func fn, int level, Args&&... args);
@@ -748,10 +749,21 @@ CBTreePage<Traits>::GetFirstObjectInfo()
 template <typename Traits>
 void CBTreePage<Traits>::Print(ostream& os)
 {
-        Inorden([](CBTreeEntry<Traits>& info, int level, ostream* pOs) {
-                for( int i = 0; i < level ; i++) *pOs << "\t";
-                *pOs << info.key << "->" << info.ObjID << "\n";
-        }, 0, &os);
+        Print(os, 0);
+}
+
+template <typename Traits>
+void CBTreePage<Traits>::Print(ostream& os, int level)
+{
+        for( int i = 0 ; i < m_KeyCount ; i++ ) {
+                if( m_SubPages[i] )
+                        m_SubPages[i]->Print(os, level+1);
+                
+                for( int j = 0; j < level ; j++) os << "\t";
+                os << m_Keys[i].key << "->" << m_Keys[i].ObjID << "\n";
+        }
+        if( m_SubPages[m_KeyCount] )
+                m_SubPages[m_KeyCount]->Print(os, level+1);
 }
 
 template <typename Traits>
